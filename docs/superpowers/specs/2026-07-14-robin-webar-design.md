@@ -116,6 +116,9 @@ Owns loading and permission instructions, tracking guidance, speech bubble, answ
 
 Maps supported mobile platforms to verified official HealthHub store URLs. It must not use unofficial mirrors. Unrecognized platforms route to the official HealthHub information page.
 
+- Apple App Store: `https://apps.apple.com/sg/app/healthhub-sg/id1034200875`
+- Google Play: `https://play.google.com/store/apps/details?id=sg.gov.hpb.healthhub&pli=1`
+
 ## 10. State and Data Flow
 
 The experience uses a small explicit state flow:
