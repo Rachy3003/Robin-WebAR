@@ -6,15 +6,12 @@ const onxrloaded = () => {
 }
 window.XR8 ? onxrloaded() : window.addEventListener('xrloaded', onxrloaded)
 
-import {HEALTHHUB_LINKS} from './robin-content'
-
 const byId = id => document.getElementById(id)
 const speech = byId('robin-speech')
 const answerPanel = byId('answer-panel')
 const answerTopic = byId('answer-topic')
 const answerQuestion = byId('answer-question')
 const answerText = byId('answer-text')
-const downloadButton = byId('download-healthhub')
 
 window.addEventListener('robin-placed', () => {
   document.body.classList.add('is-placed')
@@ -37,13 +34,3 @@ window.addEventListener('robin-card-selected', event => {
 })
 
 byId('answer-close')?.addEventListener('click', () => answerPanel.classList.remove('is-visible'))
-
-downloadButton?.addEventListener('click', () => {
-  const userAgent = navigator.userAgent || ''
-  const destination = /iPad|iPhone|iPod/.test(userAgent)
-    ? HEALTHHUB_LINKS.apple
-    : /Android/i.test(userAgent)
-      ? HEALTHHUB_LINKS.android
-      : HEALTHHUB_LINKS.fallback
-  window.location.assign(destination)
-})

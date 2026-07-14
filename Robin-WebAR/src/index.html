@@ -26,14 +26,26 @@
     .speech { position: absolute; top: max(6.5rem, env(safe-area-inset-top)); left: 50%; transform: translate(-50%, -12px) scale(.94); min-width: 230px; padding: 14px 22px; border: 4px solid var(--green); border-radius: 999px; background: var(--paper); font-weight: 750; font-size: clamp(20px, 5vw, 28px); text-align: center; opacity: 0; transition: .45s ease; box-shadow: 0 10px 34px #073c3130; }
     .speech::after { content: ''; position: absolute; left: 50%; bottom: -17px; width: 25px; height: 25px; background: white; border-right: 4px solid var(--green); border-bottom: 4px solid var(--green); transform: translateX(-50%) rotate(45deg); }
     .speech.is-visible { opacity: 1; transform: translate(-50%, 0) scale(1); }
-    .download { pointer-events: auto; position: absolute; left: 18px; right: 18px; bottom: max(18px, env(safe-area-inset-bottom)); min-height: 54px; border: 0; border-radius: 18px; padding: 14px 18px; background: var(--green); color: white; font-weight: 800; font-size: 17px; box-shadow: 0 12px 30px #073c3140; }
-    .answer { pointer-events: auto; position: absolute; left: 16px; right: 16px; bottom: calc(max(86px, env(safe-area-inset-bottom)) + 8px); max-height: min(62vh, 520px); overflow: auto; padding: 24px 22px 20px; border: 1px solid #dceae6; border-radius: 24px; background: #fffffff5; box-shadow: 0 20px 55px #052c2460; opacity: 0; transform: translateY(24px); visibility: hidden; transition: .3s ease; backdrop-filter: blur(10px); }
+    .store-panel { pointer-events: auto; position: absolute; left: 14px; right: 14px; bottom: max(12px, env(safe-area-inset-bottom)); padding: 10px 12px 11px; border: 1px solid #dceae6; border-radius: 19px; background: #fffffff2; box-shadow: 0 10px 30px #073c3138; backdrop-filter: blur(10px); }
+    .store-panel__title { margin: 0 0 7px; color: var(--ink); font-size: 15px; font-weight: 800; line-height: 1.2; text-align: center; }
+    .store-links { display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .store-link { display: block; width: min(43vw, 170px); height: 50px; overflow: hidden; border-radius: 8px; background: #000; }
+    .store-link img { display: block; position: relative; left: 50%; top: 50%; max-width: none; transform: translate(-50%, -50%); }
+    .store-link--apple img { width: 110%; }
+    .store-link--google img { width: 155%; }
+    .store-link:focus-visible { outline: 3px solid #ffd54f; outline-offset: 3px; }
+    .answer { pointer-events: auto; position: absolute; left: 16px; right: 16px; bottom: calc(max(120px, env(safe-area-inset-bottom)) + 16px); max-height: min(58vh, 500px); overflow: auto; padding: 24px 22px 20px; border: 1px solid #dceae6; border-radius: 24px; background: #fffffff5; box-shadow: 0 20px 55px #052c2460; opacity: 0; transform: translateY(24px); visibility: hidden; transition: .3s ease; backdrop-filter: blur(10px); }
     .answer.is-visible { opacity: 1; transform: translateY(0); visibility: visible; }
     .answer__topic { margin: 0 42px 8px 0; font-size: 15px; font-weight: 850; text-transform: uppercase; letter-spacing: .06em; }
     .answer h2 { margin: 0 0 12px; font-size: clamp(22px, 5.5vw, 29px); line-height: 1.12; }
     .answer p { margin: 0 0 13px; font-size: 17px; line-height: 1.5; }
     .answer small { display: block; padding-top: 12px; border-top: 1px solid #dceae6; color: #526b65; line-height: 1.4; }
     .answer__close { position: absolute; top: 14px; right: 14px; width: 42px; height: 42px; border: 0; border-radius: 50%; background: #e7f5f0; color: var(--ink); font-size: 25px; }
+    @media (max-width: 350px) {
+      .store-panel { left: 8px; right: 8px; padding-inline: 8px; }
+      .store-links { gap: 6px; }
+      .store-link { height: 45px; }
+    }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
   </style>
 </head>
@@ -48,7 +60,17 @@
       <p id="answer-text"></p>
       <small>This is general health information and is not a substitute for professional medical advice.</small>
     </section>
-    <button id="download-healthhub" class="download">Download HealthHub Mobile App</button>
+    <aside class="store-panel" aria-label="Download the HealthHub app">
+      <p class="store-panel__title">Download the HealthHub app</p>
+      <div class="store-links">
+        <a class="store-link store-link--apple" href="https://apps.apple.com/sg/app/healthhub-sg/id1034200875" aria-label="Download HealthHub on the Apple App Store">
+          <img src="./assets/apple-app-store.png" alt="Download on the App Store">
+        </a>
+        <a class="store-link store-link--google" href="https://play.google.com/store/apps/details?id=sg.gov.hpb.healthhub&amp;pli=1" aria-label="Get HealthHub on Google Play">
+          <img src="./assets/google-play.png" alt="Get it on Google Play">
+        </a>
+      </div>
+    </aside>
   </main>
   <script src="bundle.js"></script>
 
