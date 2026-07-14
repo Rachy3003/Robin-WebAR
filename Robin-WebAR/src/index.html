@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Meet Robin in AR</title>
+  <meta itemprop="name" content="Meet Robin in AR">
+  <meta name="twitter:title" content="Meet Robin in AR">
+  <meta property="og:title" content="Meet Robin in AR">
+  <meta property="og:site_name" content="Robin WebAR">
+  <meta name="description" content="Place Robin in your space and explore helpful health information.">
+  <meta itemprop="description" content="Place Robin in your space and explore helpful health information.">
+  <meta property="og:description" content="Place Robin in your space and explore helpful health information.">
+  <meta name="twitter:description" content="Place Robin in your space and explore helpful health information.">
+  <script crossorigin="anonymous" src="./external/runtime/runtime.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js" async crossorigin="anonymous" data-preload-chunks="slam"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@8thwall/landing-page@1/dist/landing-page.js" crossorigin="anonymous"></script>
+  <style>
+    :root { --green: #00b67a; --ink: #073c31; --paper: #fff; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+    button { font: inherit; }
+    .ar-ui { position: fixed; inset: 0; z-index: 20; pointer-events: none; color: var(--ink); }
+    .speech { position: absolute; top: max(6.5rem, env(safe-area-inset-top)); left: 50%; transform: translate(-50%, -12px) scale(.94); min-width: 230px; padding: 14px 22px; border: 4px solid var(--green); border-radius: 999px; background: var(--paper); font-weight: 750; font-size: clamp(20px, 5vw, 28px); text-align: center; opacity: 0; transition: .45s ease; box-shadow: 0 10px 34px #073c3130; }
+    .speech::after { content: ''; position: absolute; left: 50%; bottom: -17px; width: 25px; height: 25px; background: white; border-right: 4px solid var(--green); border-bottom: 4px solid var(--green); transform: translateX(-50%) rotate(45deg); }
+    .speech.is-visible { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    .download { pointer-events: auto; position: absolute; left: 18px; right: 18px; bottom: max(18px, env(safe-area-inset-bottom)); min-height: 54px; border: 0; border-radius: 18px; padding: 14px 18px; background: var(--green); color: white; font-weight: 800; font-size: 17px; box-shadow: 0 12px 30px #073c3140; }
+    .answer { pointer-events: auto; position: absolute; left: 16px; right: 16px; bottom: calc(max(86px, env(safe-area-inset-bottom)) + 8px); max-height: min(62vh, 520px); overflow: auto; padding: 24px 22px 20px; border: 1px solid #dceae6; border-radius: 24px; background: #fffffff5; box-shadow: 0 20px 55px #052c2460; opacity: 0; transform: translateY(24px); visibility: hidden; transition: .3s ease; backdrop-filter: blur(10px); }
+    .answer.is-visible { opacity: 1; transform: translateY(0); visibility: visible; }
+    .answer__topic { margin: 0 42px 8px 0; font-size: 15px; font-weight: 850; text-transform: uppercase; letter-spacing: .06em; }
+    .answer h2 { margin: 0 0 12px; font-size: clamp(22px, 5.5vw, 29px); line-height: 1.12; }
+    .answer p { margin: 0 0 13px; font-size: 17px; line-height: 1.5; }
+    .answer small { display: block; padding-top: 12px; border-top: 1px solid #dceae6; color: #526b65; line-height: 1.4; }
+    .answer__close { position: absolute; top: 14px; right: 14px; width: 42px; height: 42px; border: 0; border-radius: 50%; background: #e7f5f0; color: var(--ink); font-size: 25px; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+  </style>
+</head>
+
+<body>
+  <main class="ar-ui" aria-live="polite">
+    <div id="robin-speech" class="speech">How can I help you?</div>
+    <section id="answer-panel" class="answer" role="dialog" aria-modal="true" aria-labelledby="answer-question">
+      <button id="answer-close" class="answer__close" aria-label="Close answer">×</button>
+      <p id="answer-topic" class="answer__topic"></p>
+      <h2 id="answer-question"></h2>
+      <p id="answer-text"></p>
+      <small>This is general health information and is not a substitute for professional medical advice.</small>
+    </section>
+    <button id="download-healthhub" class="download">Download HealthHub Mobile App</button>
+  </main>
+  <script src="bundle.js"></script>
+
+</body>
+
+</html>

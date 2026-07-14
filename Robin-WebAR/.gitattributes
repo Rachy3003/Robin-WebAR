@@ -1,0 +1,2 @@
+# Keep project assets in regular Git. The MVP assets are below GitHub's file-size limit,
+# and this project does not require Git LFS to build or deploy.
