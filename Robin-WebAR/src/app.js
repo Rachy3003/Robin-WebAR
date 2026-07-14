@@ -15,7 +15,10 @@ const answerText = byId('answer-text')
 
 window.addEventListener('robin-placed', () => {
   document.body.classList.add('is-placed')
-  window.setTimeout(() => speech?.classList.add('is-visible'), 500)
+})
+
+window.addEventListener('robin-prompt-ready', () => {
+  speech?.classList.add('is-visible')
 })
 
 window.addEventListener('robin-reset', () => {
