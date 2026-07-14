@@ -1,17 +1,32 @@
 import * as ecs from '@8thwall/ecs'
-import {ROBIN_CARDS} from './robin-content'
 
-type ExperienceState = 'waiting' | 'prompted' | 'revealing' | 'revealed'
+type ExperienceState = 'waiting' | 'prompted'
+
+type GestureState = {
+  pointerId: number
+  startX: number
+  startY: number
+  lastX: number
+  lastY: number
+  dragging: boolean
+}
+
+type InputListener = (event: any) => void
 
 type ExperienceInstance = {
-  cards: bigint[]
   tapTarget: bigint
+  rotationTarget: bigint
   timers: number[]
   state: ExperienceState
+  gesture?: GestureState
+  startListener: InputListener
+  moveListener: InputListener
+  endListener: InputListener
 }
 
 const PROMPT_DELAY_MS = 10_000
-const CARD_STAGGER_MS = 300
+const DRAG_THRESHOLD = 0.018
+const ROTATION_RADIANS_PER_SCREEN = 6
 const instances = new Map<bigint, ExperienceInstance>()
 
 const schedule = (
@@ -24,77 +39,25 @@ const schedule = (
   instance.timers.push(timer)
 }
 
-const makeCard = (world: ecs.World, parent: bigint, cardIndex: number) => {
-  const card = ROBIN_CARDS[cardIndex]
-  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
-  const cardEid = world.createEntity()
-  world.setParent(cardEid, parent)
-  ecs.Position.set(world, cardEid, {
-    x: card.position[0],
-    y: card.position[1],
-    z: card.position[2],
-  })
-  ecs.Ui.set(world, cardEid, {
-    type: '3d',
-    fixedSize: false,
-    width: '210',
-    height: '72',
-    opacity: 0,
-    background: '#FFFFFF',
-    backgroundOpacity: 0.96,
-    borderColor: card.color,
-    borderWidth: 4,
-    borderRadius: 19,
-    color: '#073C31',
-    text: card.topic,
-    font: 'Roboto',
-    fontSize: 25,
-    textAlign: 'center',
-    verticalTextAlign: 'center',
-    padding: '11',
-  })
-  world.events.addListener(cardEid, ecs.input.UI_CLICK, () => {
-    window.dispatchEvent(new CustomEvent('robin-card-selected', {detail: card}))
-  })
-  ecs.ScaleAnimation.set(world, cardEid, {
-    autoFrom: false,
-    fromX: 0.01,
-    fromY: 0.01,
-    fromZ: 0.01,
-    toX: 1,
-    toY: 1,
-    toZ: 1,
-    duration: reducedMotion ? 180 : 560,
-    loop: false,
-    reverse: false,
-    easeOut: true,
-    easingFunction: reducedMotion ? 'Quadratic' : 'Back',
-  })
-  ecs.CustomPropertyAnimation.set(world, cardEid, {
-    attribute: 'ui',
-    property: 'opacity',
-    autoFrom: false,
-    from: 0,
-    to: 1,
-    duration: reducedMotion ? 180 : 460,
-    loop: false,
-    reverse: false,
-    easeIn: false,
-    easeOut: true,
-    easingFunction: 'Quadratic',
-  })
-  return cardEid
+const findRotationTarget = (world: ecs.World, root: bigint) => {
+  const pending = [...world.getChildren(root)]
+  while (pending.length) {
+    const eid = pending.shift()!
+    if (ecs.GltfModel.has(world, eid)) return eid
+    pending.push(...world.getChildren(eid))
+  }
+  return root
 }
 
-const makeRobotTapTarget = (world: ecs.World, parent: bigint) => {
+const makeRobotTouchTarget = (world: ecs.World, parent: bigint) => {
   const tapTarget = world.createEntity()
   world.setParent(tapTarget, parent)
   ecs.Position.set(world, tapTarget, {x: 0, y: 0.92, z: 0.2})
   ecs.Ui.set(world, tapTarget, {
     type: '3d',
     fixedSize: false,
-    width: '260',
-    height: '390',
+    width: '280',
+    height: '410',
     opacity: 0,
     backgroundOpacity: 0,
     text: '',
@@ -102,32 +65,76 @@ const makeRobotTapTarget = (world: ecs.World, parent: bigint) => {
   return tapTarget
 }
 
-const revealCards = (world: ecs.World, parent: bigint, instance: ExperienceInstance) => {
-  if (instance.state !== 'prompted') return
-  instance.state = 'revealing'
+const beginGesture = (instance: ExperienceInstance, event: ecs.ScreenTouchStartEvent) => {
+  if (instance.state !== 'prompted' || event.target !== instance.tapTarget) return
+  instance.gesture = {
+    pointerId: event.pointerId,
+    startX: event.position.x,
+    startY: event.position.y,
+    lastX: event.position.x,
+    lastY: event.position.y,
+    dragging: false,
+  }
+}
 
-  ROBIN_CARDS.forEach((_, index) => {
-    schedule(world, instance, () => {
-      if (instance.state !== 'revealing') return
-      instance.cards.push(makeCard(world, parent, index))
-      if (index === ROBIN_CARDS.length - 1) instance.state = 'revealed'
-    }, index * CARD_STAGGER_MS)
-  })
+const updateGesture = (
+  world: ecs.World,
+  instance: ExperienceInstance,
+  event: ecs.ScreenTouchMoveEvent
+) => {
+  const gesture = instance.gesture
+  if (!gesture || event.pointerId !== gesture.pointerId) return
+
+  const totalX = event.position.x - gesture.startX
+  const totalY = event.position.y - gesture.startY
+  if (Math.hypot(totalX, totalY) >= DRAG_THRESHOLD) gesture.dragging = true
+  if (!gesture.dragging) return
+
+  const deltaX = event.position.x - gesture.lastX
+  const deltaY = event.position.y - gesture.lastY
+  world.transform.rotateSelf(
+    instance.rotationTarget,
+    ecs.math.quat.yRadians(deltaX * ROTATION_RADIANS_PER_SCREEN)
+  )
+  world.transform.rotateSelf(
+    instance.rotationTarget,
+    ecs.math.quat.xRadians(deltaY * ROTATION_RADIANS_PER_SCREEN)
+  )
+  gesture.lastX = event.position.x
+  gesture.lastY = event.position.y
+}
+
+const endGesture = (instance: ExperienceInstance, event: ecs.ScreenTouchEndEvent) => {
+  const gesture = instance.gesture
+  if (!gesture || event.pointerId !== gesture.pointerId) return
+  if (!gesture.dragging && event.endTarget === instance.tapTarget) {
+    window.dispatchEvent(new CustomEvent('robin-open-cards'))
+  }
+  instance.gesture = undefined
 }
 
 ecs.registerComponent({
   name: 'robin-experience',
   add: (world, component) => {
-    const instance: ExperienceInstance = {
-      cards: [],
-      tapTarget: makeRobotTapTarget(world, component.eid),
+    const tapTarget = makeRobotTouchTarget(world, component.eid)
+    const instance = {
+      tapTarget,
+      rotationTarget: findRotationTarget(world, component.eid),
       timers: [],
       state: 'waiting',
-    }
+      startListener: undefined,
+      moveListener: undefined,
+      endListener: undefined,
+    } as unknown as ExperienceInstance
+
+    instance.startListener = event => beginGesture(instance, event.data)
+    instance.moveListener = event => updateGesture(world, instance, event.data)
+    instance.endListener = event => endGesture(instance, event.data)
     instances.set(component.eid, instance)
-    world.events.addListener(instance.tapTarget, ecs.input.UI_CLICK, () => {
-      revealCards(world, component.eid, instance)
-    })
+
+    world.events.addListener(world.events.globalId, ecs.input.SCREEN_TOUCH_START, instance.startListener)
+    world.events.addListener(world.events.globalId, ecs.input.SCREEN_TOUCH_MOVE, instance.moveListener)
+    world.events.addListener(world.events.globalId, ecs.input.SCREEN_TOUCH_END, instance.endListener)
 
     schedule(world, instance, () => {
       if (instance.state !== 'waiting') return
@@ -158,7 +165,9 @@ ecs.registerComponent({
     const instance = instances.get(component.eid)
     if (!instance) return
     instance.timers.forEach(timer => world.time.clearTimeout(timer))
-    instance.cards.forEach(eid => world.deleteEntity(eid))
+    world.events.removeListener(world.events.globalId, ecs.input.SCREEN_TOUCH_START, instance.startListener)
+    world.events.removeListener(world.events.globalId, ecs.input.SCREEN_TOUCH_MOVE, instance.moveListener)
+    world.events.removeListener(world.events.globalId, ecs.input.SCREEN_TOUCH_END, instance.endListener)
     world.deleteEntity(instance.tapTarget)
     instances.delete(component.eid)
   },
